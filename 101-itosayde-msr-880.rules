@@ -1,0 +1,2 @@
+SUBSYSTEM=="usb", DRIVER=="hidgeneric", ATTRS{idVendor}=="0801", ATTRS{idProduct}=="0005", RUN="/bin/sh -c 'echo -n $id:1.0 > /sys/bus/hid/drivers/hid-generic/unbind'"
+SUBSYSTEM=="usb", DRIVER=="hidgeneric", ATTRS{idVendor}=="0802", ATTRS{idProduct}=="0005", RUN="/bin/sh -c 'echo -n $id:1.0 > /sys/bus/hid/drivers/hid-generic/unbind'"
