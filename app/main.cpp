@@ -5,6 +5,8 @@
 #include <iostream>
 #include <array>
 #include <stdint.h>
+#include <chrono>
+#include <thread>
 
 #include <libusb-1.0/libusb.h>
 
@@ -40,7 +42,7 @@ int main(int argc, char* argv[]) {
     // Note: We have to do this twice, because the device has 2 'interface numbers' -- not sure why
     // See `bInterfaceNumber`
 
-    for (unsigned int interface_num = 0; interface_num < 3; interface_num++)
+    for (unsigned int interface_num = 0; interface_num < 2; interface_num++)
     {
         if (libusb_kernel_driver_active(lusb_dev_hndl, interface_num))
         {
@@ -50,23 +52,13 @@ int main(int argc, char* argv[]) {
                 return -1;
             }
         }
-    }
-    
-    // Now you (libusb) can safely claim the device
-    rc = libusb_claim_interface(lusb_dev_hndl, 0);
-    
-    if (rc != libusb_error::LIBUSB_SUCCESS)
-    {
-        std::cerr << "ERROR: libusb was unable to claim device, rc =" << rc << std::endl;
-        return -1;
-    }
 
-    rc = libusb_claim_interface(lusb_dev_hndl, 1);
-    
-    if (rc != libusb_error::LIBUSB_SUCCESS)
-    {
-        std::cerr << "ERROR: libusb was unable to claim device, rc =" << rc << std::endl;
-        return -1;
+        rc = libusb_claim_interface(lusb_dev_hndl, interface_num);
+        if (rc != libusb_error::LIBUSB_SUCCESS)
+        {
+            std::cerr << "ERROR: libusb was unable to claim device on interface= " << interface_num << " , rc =" << rc << std::endl;
+            return -1;
+        }
     }
 
     //// ----------------------------------- ////
@@ -88,7 +80,7 @@ int main(int argc, char* argv[]) {
 
 
     // Harcoded, got from Wireshark capture of doing a Magnetic stripe read
-    // Half the time it's 0x61 instead of 0x72, not sure why?
+
     std::array<uint8_t, 8> magstripeReadReq_1 = { 0x1b, 0x61, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
     std::array<uint8_t, 8> magstripeReadReq_2 = { 0x1b, 0x72, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
@@ -108,9 +100,25 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    // Now get ready to read the data in?
-
+    // Now get ready to read data in (though not now...)
     unsigned char in_data[8];
+
+    rc = libusb_bulk_transfer(lusb_dev_hndl, 0x01, in_data, 8, bytes_transferred_cnt, 0);
+
+    if (rc != libusb_error::LIBUSB_SUCCESS)
+    {
+        std::cerr << "ERROR: Reader dropped its URB_INTERRUPT_OUT? rc=" << rc << std::endl;
+        return -1;
+    }
+
+    
+    if (rc != libusb_error::LIBUSB_SUCCESS)
+    {
+        std::cerr << "ERROR: libusb was unable to claim device, rc =" << rc << std::endl;
+        return -1;
+    }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 
     rc = libusb_bulk_transfer(lusb_dev_hndl, 0x82, in_data, 8, bytes_transferred_cnt, 0);
 
@@ -118,6 +126,13 @@ int main(int argc, char* argv[]) {
     {
         std::cerr << "ERROR: Can't send URB_INTERRUPT in, rc=" << rc << std::endl;
         return -1;
+    }
+
+    // Need to do ANOTHER read here?
+
+    for (unsigned int i = 0; i < 8; i++) 
+    {
+        std::cout << "i=" << i << ", data[i]=" << in_data[i] << std::endl;
     }
 
     return 0;
