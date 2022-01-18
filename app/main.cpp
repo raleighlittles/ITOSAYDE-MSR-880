@@ -84,13 +84,13 @@ int main(int argc, char* argv[]) {
     std::array<uint8_t, 8> magstripeReadReq_1 = { 0x1b, 0x61, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
     std::array<uint8_t, 8> magstripeReadReq_2 = { 0x1b, 0x72, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
-    rc = libusb_bulk_transfer(lusb_dev_hndl, 0x01, magstripeReadReq_1.data(), magstripeReadReq_1.size(), bytes_transferred_cnt, 0);
+    // rc = libusb_bulk_transfer(lusb_dev_hndl, 0x01, magstripeReadReq_1.data(), magstripeReadReq_1.size(), bytes_transferred_cnt, 0);
 
-    if (rc != libusb_error::LIBUSB_SUCCESS)
-    {
-        std::cerr << "ERROR: Couldn't send magstripe read sequence (pt 1), rc=" << rc << std::endl;
-        return -1;
-    }
+    // if (rc != libusb_error::LIBUSB_SUCCESS)
+    // {
+    //     std::cerr << "ERROR: Couldn't send magstripe read sequence (pt 1), rc=" << rc << std::endl;
+    //     return -1;
+    // }
 
     rc = libusb_bulk_transfer(lusb_dev_hndl, 0x01, magstripeReadReq_2.data(), magstripeReadReq_2.size(), bytes_transferred_cnt, 0);
 
@@ -104,21 +104,15 @@ int main(int argc, char* argv[]) {
     const unsigned int magstripeReadSize = 24; // TODO Where does this come from??
     unsigned char in_data[magstripeReadSize];
 
-    rc = libusb_bulk_transfer(lusb_dev_hndl, 0x01, in_data, 8, bytes_transferred_cnt, 0);
+    // rc = libusb_bulk_transfer(lusb_dev_hndl, 0x01, in_data, 8, bytes_transferred_cnt, 0);
 
-    if (rc != libusb_error::LIBUSB_SUCCESS)
-    {
-        std::cerr << "ERROR: Reader dropped its URB_INTERRUPT_OUT? rc=" << rc << std::endl;
-        return -1;
-    }
-    
-    if (rc != libusb_error::LIBUSB_SUCCESS)
-    {
-        std::cerr << "ERROR: libusb was unable to claim device, rc =" << rc << std::endl;
-        return -1;
-    }
+    // if (rc != libusb_error::LIBUSB_SUCCESS)
+    // {
+    //     std::cerr << "ERROR: Reader dropped its URB_INTERRUPT_OUT? rc=" << rc << std::endl;
+    //     return -1;
+    // }
 
-    rc = libusb_bulk_transfer(lusb_dev_hndl, 0x82, in_data, magstripeReadSize, bytes_transferred_cnt, 0);
+    rc = libusb_bulk_transfer(lusb_dev_hndl, 0x82, in_data, magstripeReadSize, bytes_transferred_cnt, 0); // Get header
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
@@ -126,11 +120,104 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    // Need to do ANOTHER read here?
+    // Calling this the 'header' -- the reader here will transmit 8 bytes, but I have no idea what they represent
+    // It seems to have nothing to do with the actual card information itself
 
-    const std::string magstripeReadData(reinterpret_cast<char*>(in_data), magstripeReadSize);
+    const std::string magstripeReadHeader(reinterpret_cast<char*>(in_data), 8);
 
-    std::cout << magstripeReadData << std::endl;
+    rc = libusb_bulk_transfer(lusb_dev_hndl, 0x82, in_data, 8, bytes_transferred_cnt, 0);
+
+    if (rc != libusb_error::LIBUSB_SUCCESS)
+    {
+        std::cerr << "ERROR: Can't send URB_INTERRUPT in, rc=" << rc << std::endl;
+        return -1;
+    }
+
+    std::cout << "Header=" << magstripeReadHeader << std::endl;
+
+    // Now, here is where the actual card data starts to come in... Reader splits up the data into 3 packets (Why?)
+
+    rc = libusb_bulk_transfer(lusb_dev_hndl, 0x82, in_data, magstripeReadSize / 3, bytes_transferred_cnt, 0); // Packet 1 of 3
+
+    if (rc != libusb_error::LIBUSB_SUCCESS)
+    {
+        std::cerr << "ERROR: Can't send URB_INTERRUPT in, rc=" << rc << std::endl;
+        return -1;
+    }
+
+    // Store the data in the buffer (we'll have to add to it in each transaction)
+    std::string magstripeReadData(reinterpret_cast<char*>(in_data), magstripeReadSize / 3);
+
+
+    // // Tell the reader the first packet was received successfully?
+    // rc = libusb_bulk_transfer(lusb_dev_hndl, 0x82, in_data, 8, bytes_transferred_cnt, 0);
+
+    // if (rc != libusb_error::LIBUSB_SUCCESS)
+    // {
+    //     std::cerr << "ERROR: Can't send URB_INTERRUPT in, rc=" << rc << std::endl;
+    //     return -1;
+    // }
+
+    // Now read the second 8 bytes.. You get the idea.
+
+    rc = libusb_bulk_transfer(lusb_dev_hndl, 0x82, in_data, magstripeReadSize / 3, bytes_transferred_cnt, 0); // Packet 2 of 3
+
+    if (rc != libusb_error::LIBUSB_SUCCESS)
+    {
+        std::cerr << "ERROR: Can't send URB_INTERRUPT in, rc=" << rc << std::endl;
+        return -1;
+    }
+
+    // Append the bytes you received
+    magstripeReadData.append(reinterpret_cast<char*>(in_data), magstripeReadSize / 3);
+
+    // // Tell the reader the second packet was received successfully
+    // rc = libusb_bulk_transfer(lusb_dev_hndl, 0x82, in_data, 8, bytes_transferred_cnt, 0);
+
+    // if (rc != libusb_error::LIBUSB_SUCCESS)
+    // {
+    //     std::cerr << "ERROR: Can't send URB_INTERRUPT in, rc=" << rc << std::endl;
+    //     return -1;
+    // }
+
+    // Now read the last 8 bytes
+
+    rc = libusb_bulk_transfer(lusb_dev_hndl, 0x82, in_data, magstripeReadSize / 3, bytes_transferred_cnt, 0); // Packet 3 of 3
+
+    if (rc != libusb_error::LIBUSB_SUCCESS)
+    {
+        std::cerr << "ERROR: Can't send URB_INTERRUPT in, rc=" << rc << std::endl;
+        return -1;
+    }
+
+    // Append the bytes you received
+    magstripeReadData.append(reinterpret_cast<char*>(in_data), magstripeReadSize / 3);
+
+    std::cout << "DATA=" << magstripeReadData << std::endl;
+
+    // // Tell the reader the third packet was received successfully
+    // rc = libusb_bulk_transfer(lusb_dev_hndl, 0x82, in_data, 8, bytes_transferred_cnt, 0);
+
+    // if (rc != libusb_error::LIBUSB_SUCCESS)
+    // {
+    //     std::cerr << "ERROR: Can't send URB_INTERRUPT in, rc=" << rc << std::endl;
+    //     return -1;
+    // }
+
+    // Calling this the 'footer' -- the reader will transmit 8 bytes, but just like with the 'header',
+    // I have no idea what it actually means..
+
+    rc = libusb_bulk_transfer(lusb_dev_hndl, 0x82, in_data, 8, bytes_transferred_cnt, 0);
+
+    if (rc != libusb_error::LIBUSB_SUCCESS)
+    {
+        std::cerr << "ERROR: Can't send URB_INTERRUPT in, rc=" << rc << std::endl;
+        return -1;
+    }
+
+    const std::string magstripeFooter(reinterpret_cast<char*>(in_data), 8);
+
+    std::cout << "Footer=" << magstripeFooter << std::endl;
 
     return 0;
 }
