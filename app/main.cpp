@@ -70,7 +70,7 @@ int main(int argc, char* argv[]) {
     
     int* bytes_transferred_cnt = nullptr;
     
-    rc = libusb_bulk_transfer(lusb_dev_hndl, 0x01, connect_data.data(), connect_data.size(), bytes_transferred_cnt, 0);
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x01, connect_data.data(), connect_data.size(), bytes_transferred_cnt, 0);
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
@@ -84,15 +84,15 @@ int main(int argc, char* argv[]) {
     std::array<uint8_t, 8> magstripeReadReq_1 = { 0x1b, 0x61, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
     std::array<uint8_t, 8> magstripeReadReq_2 = { 0x1b, 0x72, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
-    // rc = libusb_bulk_transfer(lusb_dev_hndl, 0x01, magstripeReadReq_1.data(), magstripeReadReq_1.size(), bytes_transferred_cnt, 0);
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x01, magstripeReadReq_1.data(), magstripeReadReq_1.size(), bytes_transferred_cnt, 0);
 
-    // if (rc != libusb_error::LIBUSB_SUCCESS)
-    // {
-    //     std::cerr << "ERROR: Couldn't send magstripe read sequence (pt 1), rc=" << rc << std::endl;
-    //     return -1;
-    // }
+    if (rc != libusb_error::LIBUSB_SUCCESS)
+    {
+        std::cerr << "ERROR: Couldn't send magstripe read sequence (pt 1), rc=" << rc << std::endl;
+        return -1;
+    }
 
-    rc = libusb_bulk_transfer(lusb_dev_hndl, 0x01, magstripeReadReq_2.data(), magstripeReadReq_2.size(), bytes_transferred_cnt, 0);
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x01, magstripeReadReq_2.data(), magstripeReadReq_2.size(), bytes_transferred_cnt, 0);
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
@@ -104,13 +104,13 @@ int main(int argc, char* argv[]) {
     const unsigned int magstripeReadSize = 24; // TODO Where does this come from??
     unsigned char in_data[magstripeReadSize];
 
-    // rc = libusb_bulk_transfer(lusb_dev_hndl, 0x01, in_data, 8, bytes_transferred_cnt, 0);
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x01, in_data, 8, bytes_transferred_cnt, 0);
 
-    // if (rc != libusb_error::LIBUSB_SUCCESS)
-    // {
-    //     std::cerr << "ERROR: Reader dropped its URB_INTERRUPT_OUT? rc=" << rc << std::endl;
-    //     return -1;
-    // }
+    if (rc != libusb_error::LIBUSB_SUCCESS)
+    {
+        std::cerr << "ERROR: Reader dropped its URB_INTERRUPT_OUT? rc=" << rc << std::endl;
+        return -1;
+    }
 
     rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x82, in_data, magstripeReadSize, bytes_transferred_cnt, 0); // Get header
 
@@ -125,7 +125,7 @@ int main(int argc, char* argv[]) {
 
     const std::string magstripeReadHeader(reinterpret_cast<char*>(in_data), 8);
 
-    rc = libusb_bulk_transfer(lusb_dev_hndl, 0x82, in_data, 8, bytes_transferred_cnt, 0);
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x82, in_data, 8, bytes_transferred_cnt, 0);
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
@@ -161,7 +161,7 @@ int main(int argc, char* argv[]) {
 
     // Now read the second 8 bytes.. You get the idea.
 
-    rc = libusb_bulk_transfer(lusb_dev_hndl, 0x82, in_data, magstripeReadSize / 3, bytes_transferred_cnt, 0); // Packet 2 of 3
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x82, in_data, magstripeReadSize / 3, bytes_transferred_cnt, 0); // Packet 2 of 3
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
@@ -208,7 +208,7 @@ int main(int argc, char* argv[]) {
     // Calling this the 'footer' -- the reader will transmit 8 bytes, but just like with the 'header',
     // I have no idea what it actually means..
 
-    rc = libusb_bulk_transfer(lusb_dev_hndl, 0x82, in_data, 8, bytes_transferred_cnt, 0);
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x82, in_data, 8, bytes_transferred_cnt, 0);
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
