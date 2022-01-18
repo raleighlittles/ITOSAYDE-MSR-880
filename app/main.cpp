@@ -112,7 +112,7 @@ int main(int argc, char* argv[]) {
     //     return -1;
     // }
 
-    rc = libusb_bulk_transfer(lusb_dev_hndl, 0x82, in_data, magstripeReadSize, bytes_transferred_cnt, 0); // Get header
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x82, in_data, magstripeReadSize, bytes_transferred_cnt, 0); // Get header
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
@@ -135,9 +135,11 @@ int main(int argc, char* argv[]) {
 
     std::cout << "Header=" << magstripeReadHeader << std::endl;
 
+    std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+
     // Now, here is where the actual card data starts to come in... Reader splits up the data into 3 packets (Why?)
 
-    rc = libusb_bulk_transfer(lusb_dev_hndl, 0x82, in_data, magstripeReadSize / 3, bytes_transferred_cnt, 0); // Packet 1 of 3
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x82, in_data, magstripeReadSize / 3, bytes_transferred_cnt, 0); // Packet 1 of 3
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
@@ -148,15 +150,14 @@ int main(int argc, char* argv[]) {
     // Store the data in the buffer (we'll have to add to it in each transaction)
     std::string magstripeReadData(reinterpret_cast<char*>(in_data), magstripeReadSize / 3);
 
-
     // // Tell the reader the first packet was received successfully?
-    // rc = libusb_bulk_transfer(lusb_dev_hndl, 0x82, in_data, 8, bytes_transferred_cnt, 0);
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x82, in_data, 8, bytes_transferred_cnt, 0);
 
-    // if (rc != libusb_error::LIBUSB_SUCCESS)
-    // {
-    //     std::cerr << "ERROR: Can't send URB_INTERRUPT in, rc=" << rc << std::endl;
-    //     return -1;
-    // }
+    if (rc != libusb_error::LIBUSB_SUCCESS)
+    {
+        std::cerr << "ERROR: Can't send URB_INTERRUPT in, rc=" << rc << std::endl;
+        return -1;
+    }
 
     // Now read the second 8 bytes.. You get the idea.
 
@@ -171,18 +172,18 @@ int main(int argc, char* argv[]) {
     // Append the bytes you received
     magstripeReadData.append(reinterpret_cast<char*>(in_data), magstripeReadSize / 3);
 
-    // // Tell the reader the second packet was received successfully
-    // rc = libusb_bulk_transfer(lusb_dev_hndl, 0x82, in_data, 8, bytes_transferred_cnt, 0);
+    // Tell the reader the second packet was received successfully
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x82, in_data, 8, bytes_transferred_cnt, 0);
 
-    // if (rc != libusb_error::LIBUSB_SUCCESS)
-    // {
-    //     std::cerr << "ERROR: Can't send URB_INTERRUPT in, rc=" << rc << std::endl;
-    //     return -1;
-    // }
+    if (rc != libusb_error::LIBUSB_SUCCESS)
+    {
+        std::cerr << "ERROR: Can't send URB_INTERRUPT in, rc=" << rc << std::endl;
+        return -1;
+    }
 
     // Now read the last 8 bytes
 
-    rc = libusb_bulk_transfer(lusb_dev_hndl, 0x82, in_data, magstripeReadSize / 3, bytes_transferred_cnt, 0); // Packet 3 of 3
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x82, in_data, magstripeReadSize / 3, bytes_transferred_cnt, 0); // Packet 3 of 3
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
@@ -191,18 +192,18 @@ int main(int argc, char* argv[]) {
     }
 
     // Append the bytes you received
-    magstripeReadData.append(reinterpret_cast<char*>(in_data), magstripeReadSize / 3);
+   // magstripeReadData.append(reinterpret_cast<char*>(in_data), magstripeReadSize / 3);
 
     std::cout << "DATA=" << magstripeReadData << std::endl;
 
-    // // Tell the reader the third packet was received successfully
-    // rc = libusb_bulk_transfer(lusb_dev_hndl, 0x82, in_data, 8, bytes_transferred_cnt, 0);
+    // Tell the reader the third packet was received successfully
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x82, in_data, 8, bytes_transferred_cnt, 0);
 
-    // if (rc != libusb_error::LIBUSB_SUCCESS)
-    // {
-    //     std::cerr << "ERROR: Can't send URB_INTERRUPT in, rc=" << rc << std::endl;
-    //     return -1;
-    // }
+    if (rc != libusb_error::LIBUSB_SUCCESS)
+    {
+        std::cerr << "ERROR: Can't send URB_INTERRUPT in, rc=" << rc << std::endl;
+        return -1;
+    }
 
     // Calling this the 'footer' -- the reader will transmit 8 bytes, but just like with the 'header',
     // I have no idea what it actually means..
