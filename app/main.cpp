@@ -100,8 +100,9 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    // Now get ready to read data in (though not now...)
-    unsigned char in_data[8];
+    // Now get ready to read data in (though not now...?)
+    const unsigned int magstripeReadSize = 24; // TODO Where does this come from??
+    unsigned char in_data[magstripeReadSize];
 
     rc = libusb_bulk_transfer(lusb_dev_hndl, 0x01, in_data, 8, bytes_transferred_cnt, 0);
 
@@ -110,7 +111,6 @@ int main(int argc, char* argv[]) {
         std::cerr << "ERROR: Reader dropped its URB_INTERRUPT_OUT? rc=" << rc << std::endl;
         return -1;
     }
-
     
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
@@ -118,9 +118,7 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(5000));
-
-    rc = libusb_bulk_transfer(lusb_dev_hndl, 0x82, in_data, 8, bytes_transferred_cnt, 0);
+    rc = libusb_bulk_transfer(lusb_dev_hndl, 0x82, in_data, magstripeReadSize, bytes_transferred_cnt, 0);
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
@@ -130,10 +128,9 @@ int main(int argc, char* argv[]) {
 
     // Need to do ANOTHER read here?
 
-    for (unsigned int i = 0; i < 8; i++) 
-    {
-        std::cout << "i=" << i << ", data[i]=" << in_data[i] << std::endl;
-    }
+    const std::string magstripeReadData(reinterpret_cast<char*>(in_data), magstripeReadSize);
+
+    std::cout << magstripeReadData << std::endl;
 
     return 0;
 }
