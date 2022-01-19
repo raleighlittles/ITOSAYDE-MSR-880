@@ -35,8 +35,7 @@ This outlines the features I've implemeneted.
 | Read | N |
 | Write | N |
 
-
-# Project Info / Looking to contribute?
+# Project Info
 
 Directory breakdown (add ls output here)
 
@@ -52,4 +51,6 @@ Directory breakdown (add ls output here)
 
 The README in the wireshark directory has some information.
 
-Basically, if you're looking to help out, simply look at the list of unimplemented features, find a wireshark dump that covers that case, and start implementing it!
+## Interested in contributing?
+
+If you're looking to help out, simply look at the list of unimplemented features, find a Wireshark dump that covers that case, and start implementing it.
