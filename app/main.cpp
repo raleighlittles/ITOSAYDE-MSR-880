@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
 
     int rc = libusb_init(&lusb_context);
 
-    libusb_set_option(lusb_context, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_DEBUG);
+    libusb_set_option(lusb_context, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_WARNING);
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
@@ -79,6 +79,7 @@ int main(int argc, char* argv[]) {
     // Get ready to do a magstripe read
     const unsigned int magstripeReadSize = 24; // TODO Where does this come from??
     unsigned char in_data[magstripeReadSize];
+    std::fill(in_data, in_data + magstripeReadSize, 0); // for debug
 
     // Harcoded, got from Wireshark capture of doing a Magnetic stripe read
 
@@ -119,7 +120,9 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointIn, in_data, magstripeReadSize, bytes_transferred_cnt, 0); // Get header
+    unsigned char raw_header[8];
+
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointIn, raw_header, magstripeReadSize, bytes_transferred_cnt, 0); // Get 'header'..
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
@@ -127,11 +130,18 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    // Calling this the 'header' -- the reader here will transmit 8 bytes, but I have no idea what they represent
+    // Why am I zeroing this out?
+    std::fill(in_data, in_data + magstripeReadSize, 0);
+
+    // I keep calling this the 'header' -- the reader here will transmit 8 bytes, but I have no idea what they represent
     // It seems to have nothing to do with the actual card information itself
+    // Debugging note: This is where the LED goes from green to blue
 
-    const std::string magstripeReadHeader(reinterpret_cast<char*>(in_data), 8);
+    const std::string magstripeReadHeader(reinterpret_cast<char*>(raw_header), 8);
 
+    std::cout << "Header=" << magstripeReadHeader << std::endl;
+
+    
     rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointIn, in_data, 8, bytes_transferred_cnt, 0);
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
@@ -139,8 +149,6 @@ int main(int argc, char* argv[]) {
         std::cerr << "ERROR: Can't send URB_INTERRUPT in, rc=" << rc << std::endl;
         return -1;
     }
-
-    std::cout << "Header=" << magstripeReadHeader << std::endl;
 
     // std::this_thread::sleep_for(std::chrono::milliseconds(5000)); // sleep 
 

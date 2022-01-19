@@ -5,6 +5,12 @@
 */CMakeFiles/**
 */CMakeCache.txt
 */cmake_install.cmake
+*/.cmake/*
+*/cmake-build-debug/*
 
 # Application binaries
 */itosayde_msr_880_driver_demo
+
+# CLion files
+*/.idea/*
+*.cbp
