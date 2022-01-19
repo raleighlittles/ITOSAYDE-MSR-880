@@ -120,13 +120,22 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    unsigned char raw_header[8];
-
-    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointIn, raw_header, 8, bytes_transferred_cnt, 0); // Get 'header'..
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointIn, in_data, 8, bytes_transferred_cnt, 0);
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
-        std::cerr << "ERROR: Can't send URB_INTERRUPT in for header, rc=" << rc << std::endl;
+        std::cerr << "ERROR: Can't send URB_INTERRUPT in, rc=" << rc << std::endl;
+        return -1;
+    }
+    
+    // This is where the "header" data gets transmitted
+    unsigned char raw_header[8];
+
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointIn, in_data, 8, bytes_transferred_cnt, 0);
+
+    if (rc != libusb_error::LIBUSB_SUCCESS)
+    {
+        std::cerr << "ERROR: Can't send URB_INTERRUPT in #2, rc=" << rc << std::endl;
         return -1;
     }
 
@@ -137,14 +146,6 @@ int main(int argc, char* argv[]) {
     const std::string magstripeReadHeader(reinterpret_cast<char*>(raw_header), 8);
 
     std::cout << "Header=" << magstripeReadHeader << std::endl;
-    
-    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointIn, in_data, 8, bytes_transferred_cnt, 0);
-
-    if (rc != libusb_error::LIBUSB_SUCCESS)
-    {
-        std::cerr << "ERROR: Can't send URB_INTERRUPT in #2, rc=" << rc << std::endl;
-        return -1;
-    }
 
     // Why is the transaction above actually the header??
     for (unsigned int i = 0; i < 8; i++) {
