@@ -10,11 +10,9 @@
 
 #include <libusb-1.0/libusb.h>
 
+#include "usb_wrapper.h"
+
 int main(int argc, char* argv[]) {
-
-    const uint16_t productID = 0x0005;
-    const uint16_t vendorID = 0x0802;
-
 
     libusb_context* lusb_context = nullptr;
 
@@ -70,7 +68,7 @@ int main(int argc, char* argv[]) {
     
     int* bytes_transferred_cnt = nullptr;
     
-    rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x01, connect_data.data(), connect_data.size(), bytes_transferred_cnt, 0);
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointOut, connect_data.data(), connect_data.size(), bytes_transferred_cnt, 0);
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
@@ -87,7 +85,7 @@ int main(int argc, char* argv[]) {
     std::array<uint8_t, 8> magstripeReadReq_1 = { 0x1b, 0x61, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
     std::array<uint8_t, 8> magstripeReadReq_2 = { 0x1b, 0x72, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
-    rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x01, magstripeReadReq_1.data(), magstripeReadReq_1.size(), bytes_transferred_cnt, 0);
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointOut, magstripeReadReq_1.data(), magstripeReadReq_1.size(), bytes_transferred_cnt, 0);
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
@@ -95,7 +93,7 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x01, in_data, 8, bytes_transferred_cnt, 0);
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointOut, in_data, 8, bytes_transferred_cnt, 0);
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
@@ -103,7 +101,7 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x01, magstripeReadReq_2.data(), magstripeReadReq_2.size(), bytes_transferred_cnt, 0);
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointOut, magstripeReadReq_2.data(), magstripeReadReq_2.size(), bytes_transferred_cnt, 0);
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
@@ -113,7 +111,7 @@ int main(int argc, char* argv[]) {
 
     // Now get ready to read data in (though not now...?)
 
-    rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x01, in_data, 8, bytes_transferred_cnt, 0);
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointOut, in_data, 8, bytes_transferred_cnt, 0);
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
@@ -121,7 +119,7 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x82, in_data, magstripeReadSize, bytes_transferred_cnt, 0); // Get header
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointIn, in_data, magstripeReadSize, bytes_transferred_cnt, 0); // Get header
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
@@ -134,7 +132,7 @@ int main(int argc, char* argv[]) {
 
     const std::string magstripeReadHeader(reinterpret_cast<char*>(in_data), 8);
 
-    rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x82, in_data, 8, bytes_transferred_cnt, 0);
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointIn, in_data, 8, bytes_transferred_cnt, 0);
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
@@ -148,7 +146,7 @@ int main(int argc, char* argv[]) {
 
     // Now, here is where the actual card data starts to come in... Reader splits up the data into 3 packets (Why?)
 
-    rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x82, in_data, magstripeReadSize / 3, bytes_transferred_cnt, 0); // Packet 1 of 3
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointIn, in_data, magstripeReadSize / 3, bytes_transferred_cnt, 0); // Packet 1 of 3
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
@@ -160,7 +158,7 @@ int main(int argc, char* argv[]) {
     std::string magstripeReadData(reinterpret_cast<char*>(in_data), magstripeReadSize / 3);
 
     // // Tell the reader the first packet was received successfully?
-    rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x82, in_data, 8, bytes_transferred_cnt, 0);
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointIn, in_data, 8, bytes_transferred_cnt, 0);
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
@@ -170,7 +168,7 @@ int main(int argc, char* argv[]) {
 
     // Now read the second 8 bytes.. You get the idea.
 
-    rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x82, in_data, magstripeReadSize / 3, bytes_transferred_cnt, 0); // Packet 2 of 3
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointIn, in_data, magstripeReadSize / 3, bytes_transferred_cnt, 0); // Packet 2 of 3
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
@@ -182,7 +180,7 @@ int main(int argc, char* argv[]) {
     magstripeReadData.append(reinterpret_cast<char*>(in_data), magstripeReadSize / 3);
 
     // Tell the reader the second packet was received successfully
-    rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x82, in_data, 8, bytes_transferred_cnt, 0);
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointIn, in_data, 8, bytes_transferred_cnt, 0);
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
@@ -192,7 +190,7 @@ int main(int argc, char* argv[]) {
 
     // Now read the last 8 bytes
 
-    rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x82, in_data, magstripeReadSize / 3, bytes_transferred_cnt, 0); // Packet 3 of 3
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointIn, in_data, magstripeReadSize / 3, bytes_transferred_cnt, 0); // Packet 3 of 3
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
@@ -206,7 +204,7 @@ int main(int argc, char* argv[]) {
     std::cout << "DATA=" << magstripeReadData << std::endl;
 
     // Tell the reader the third packet was received successfully
-    rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x82, in_data, 8, bytes_transferred_cnt, 0);
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointIn, in_data, 8, bytes_transferred_cnt, 0);
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
@@ -217,7 +215,7 @@ int main(int argc, char* argv[]) {
     // Calling this the 'footer' -- the reader will transmit 8 bytes, but just like with the 'header',
     // I have no idea what it actually means..
 
-    rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x82, in_data, 8, bytes_transferred_cnt, 0);
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointIn, in_data, 8, bytes_transferred_cnt, 0);
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
@@ -231,7 +229,7 @@ int main(int argc, char* argv[]) {
 
     // Tell the reader that the footer was received (??)
 
-    rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x82, in_data, 8, bytes_transferred_cnt, 0);
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointIn, in_data, 8, bytes_transferred_cnt, 0);
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
@@ -241,7 +239,7 @@ int main(int argc, char* argv[]) {
 
     // Why is this transaction happening again??
 
-    rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x01, magstripeReadReq_2.data(), 8, bytes_transferred_cnt, 0);
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointOut, magstripeReadReq_2.data(), 8, bytes_transferred_cnt, 0);
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
         std::cerr << "ERROR: Could'nt do 2nd to last transaction, rc=" << rc << std::endl;
@@ -250,7 +248,7 @@ int main(int argc, char* argv[]) {
 
     // Tell the reader that the transaction is over??
 
-    rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x01, in_data, 8, bytes_transferred_cnt, 0);
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointOut, in_data, 8, bytes_transferred_cnt, 0);
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
         std::cerr << "ERROR: Couldn't send magstripe read sequence (pt 1), rc=" << rc << std::endl;
