@@ -94,7 +94,7 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointOut, in_data, 8, bytes_transferred_cnt, 0);
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointOut, in_data, 0, bytes_transferred_cnt, 0);
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
@@ -112,7 +112,7 @@ int main(int argc, char* argv[]) {
 
     // Now get ready to read data in (though not now...?)
 
-    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointOut, in_data, 8, bytes_transferred_cnt, 0);
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointOut, in_data, 0, bytes_transferred_cnt, 0);
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
@@ -122,16 +122,13 @@ int main(int argc, char* argv[]) {
 
     unsigned char raw_header[8];
 
-    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointIn, raw_header, magstripeReadSize, bytes_transferred_cnt, 0); // Get 'header'..
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointIn, raw_header, 8, bytes_transferred_cnt, 0); // Get 'header'..
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
-        std::cerr << "ERROR: Can't send URB_INTERRUPT in, rc=" << rc << std::endl;
+        std::cerr << "ERROR: Can't send URB_INTERRUPT in for header, rc=" << rc << std::endl;
         return -1;
     }
-
-    // Why am I zeroing this out?
-    std::fill(in_data, in_data + magstripeReadSize, 0);
 
     // I keep calling this the 'header' -- the reader here will transmit 8 bytes, but I have no idea what they represent
     // It seems to have nothing to do with the actual card information itself
@@ -140,14 +137,18 @@ int main(int argc, char* argv[]) {
     const std::string magstripeReadHeader(reinterpret_cast<char*>(raw_header), 8);
 
     std::cout << "Header=" << magstripeReadHeader << std::endl;
-
     
     rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointIn, in_data, 8, bytes_transferred_cnt, 0);
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
-        std::cerr << "ERROR: Can't send URB_INTERRUPT in, rc=" << rc << std::endl;
+        std::cerr << "ERROR: Can't send URB_INTERRUPT in #2, rc=" << rc << std::endl;
         return -1;
+    }
+
+    // Why is the transaction above actually the header??
+    for (unsigned int i = 0; i < 8; i++) {
+        std::cout << "i=" << i << ", data[i]=" << in_data[i] << std::endl;
     }
 
     // std::this_thread::sleep_for(std::chrono::milliseconds(5000)); // sleep 
@@ -158,7 +159,7 @@ int main(int argc, char* argv[]) {
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
-        std::cerr << "ERROR: Can't send URB_INTERRUPT in, rc=" << rc << std::endl;
+        std::cerr << "ERROR: Can't send URB_INTERRUPT in #3, rc=" << rc << std::endl;
         return -1;
     }
 
@@ -166,11 +167,11 @@ int main(int argc, char* argv[]) {
     std::string magstripeReadData(reinterpret_cast<char*>(in_data), magstripeReadSize / 3);
 
     // // Tell the reader the first packet was received successfully?
-    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointIn, in_data, 8, bytes_transferred_cnt, 0);
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointIn, in_data, 0, bytes_transferred_cnt, 0);
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
-        std::cerr << "ERROR: Can't send URB_INTERRUPT in, rc=" << rc << std::endl;
+        std::cerr << "ERROR: Can't send URB_INTERRUPT in #4, rc=" << rc << std::endl;
         return -1;
     }
 
@@ -180,7 +181,7 @@ int main(int argc, char* argv[]) {
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
-        std::cerr << "ERROR: Can't send URB_INTERRUPT in, rc=" << rc << std::endl;
+        std::cerr << "ERROR: Can't send URB_INTERRUPT in #5, rc=" << rc << std::endl;
         return -1;
     }
 
@@ -188,11 +189,11 @@ int main(int argc, char* argv[]) {
     magstripeReadData.append(reinterpret_cast<char*>(in_data), magstripeReadSize / 3);
 
     // Tell the reader the second packet was received successfully
-    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointIn, in_data, 8, bytes_transferred_cnt, 0);
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointIn, in_data, 0, bytes_transferred_cnt, 0);
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
-        std::cerr << "ERROR: Can't send URB_INTERRUPT in, rc=" << rc << std::endl;
+        std::cerr << "ERROR: Can't send URB_INTERRUPT in #6, rc=" << rc << std::endl;
         return -1;
     }
 
@@ -202,7 +203,7 @@ int main(int argc, char* argv[]) {
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
-        std::cerr << "ERROR: Can't send URB_INTERRUPT in, rc=" << rc << std::endl;
+        std::cerr << "ERROR: Can't send URB_INTERRUPT in #7, rc=" << rc << std::endl;
         return -1;
     }
 
@@ -212,11 +213,11 @@ int main(int argc, char* argv[]) {
     std::cout << "DATA=" << magstripeReadData << std::endl;
 
     // Tell the reader the third packet was received successfully
-    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointIn, in_data, 8, bytes_transferred_cnt, 0);
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointIn, in_data, 0, bytes_transferred_cnt, 0);
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
-        std::cerr << "ERROR: Can't send URB_INTERRUPT in, rc=" << rc << std::endl;
+        std::cerr << "ERROR: Can't send URB_INTERRUPT in #8, rc=" << rc << std::endl;
         return -1;
     }
 
@@ -227,7 +228,7 @@ int main(int argc, char* argv[]) {
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
-        std::cerr << "ERROR: Can't send URB_INTERRUPT in, rc=" << rc << std::endl;
+        std::cerr << "ERROR: Can't send URB_INTERRUPT in #9, rc=" << rc << std::endl;
         return -1;
     }
 
@@ -237,7 +238,7 @@ int main(int argc, char* argv[]) {
 
     // Tell the reader that the footer was received (??)
 
-    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointIn, in_data, 8, bytes_transferred_cnt, 0);
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointIn, in_data, 0, bytes_transferred_cnt, 0);
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
@@ -247,7 +248,7 @@ int main(int argc, char* argv[]) {
 
     // Why is this transaction happening again??
 
-    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointOut, magstripeReadReq_2.data(), 8, bytes_transferred_cnt, 0);
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointOut, magstripeReadReq_2.data(), magstripeReadData.size(), bytes_transferred_cnt, 0);
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
         std::cerr << "ERROR: Could'nt do 2nd to last transaction, rc=" << rc << std::endl;
@@ -256,7 +257,7 @@ int main(int argc, char* argv[]) {
 
     // Tell the reader that the transaction is over??
 
-    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointOut, in_data, 8, bytes_transferred_cnt, 0);
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, endpointOut, in_data, 0, bytes_transferred_cnt, 0);
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
         std::cerr << "ERROR: Couldn't send magstripe read sequence (pt 1), rc=" << rc << std::endl;
