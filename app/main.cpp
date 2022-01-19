@@ -78,6 +78,9 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
+    // Get ready to do a magstripe read
+    const unsigned int magstripeReadSize = 24; // TODO Where does this come from??
+    unsigned char in_data[magstripeReadSize];
 
     // Harcoded, got from Wireshark capture of doing a Magnetic stripe read
 
@@ -85,6 +88,14 @@ int main(int argc, char* argv[]) {
     std::array<uint8_t, 8> magstripeReadReq_2 = { 0x1b, 0x72, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
     rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x01, magstripeReadReq_1.data(), magstripeReadReq_1.size(), bytes_transferred_cnt, 0);
+
+    if (rc != libusb_error::LIBUSB_SUCCESS)
+    {
+        std::cerr << "ERROR: Couldn't send magstripe read sequence (pt 1), rc=" << rc << std::endl;
+        return -1;
+    }
+
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x01, in_data, 8, bytes_transferred_cnt, 0);
 
     if (rc != libusb_error::LIBUSB_SUCCESS)
     {
@@ -101,8 +112,6 @@ int main(int argc, char* argv[]) {
     }
 
     // Now get ready to read data in (though not now...?)
-    const unsigned int magstripeReadSize = 24; // TODO Where does this come from??
-    unsigned char in_data[magstripeReadSize];
 
     rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x01, in_data, 8, bytes_transferred_cnt, 0);
 
@@ -135,7 +144,7 @@ int main(int argc, char* argv[]) {
 
     std::cout << "Header=" << magstripeReadHeader << std::endl;
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+    // std::this_thread::sleep_for(std::chrono::milliseconds(5000)); // sleep 
 
     // Now, here is where the actual card data starts to come in... Reader splits up the data into 3 packets (Why?)
 
@@ -219,6 +228,34 @@ int main(int argc, char* argv[]) {
     const std::string magstripeFooter(reinterpret_cast<char*>(in_data), 8);
 
     std::cout << "Footer=" << magstripeFooter << std::endl;
+
+    // Tell the reader that the footer was received (??)
+
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x82, in_data, 8, bytes_transferred_cnt, 0);
+
+    if (rc != libusb_error::LIBUSB_SUCCESS)
+    {
+        std::cerr << "ERROR: Couldn't send magstripe read sequence (pt 1), rc=" << rc << std::endl;
+        return -1;
+    }
+
+    // Why is this transaction happening again??
+
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x01, magstripeReadReq_2.data(), 8, bytes_transferred_cnt, 0);
+    if (rc != libusb_error::LIBUSB_SUCCESS)
+    {
+        std::cerr << "ERROR: Could'nt do 2nd to last transaction, rc=" << rc << std::endl;
+        return -1;
+    }
+
+    // Tell the reader that the transaction is over??
+
+    rc = libusb_interrupt_transfer(lusb_dev_hndl, 0x01, in_data, 8, bytes_transferred_cnt, 0);
+    if (rc != libusb_error::LIBUSB_SUCCESS)
+    {
+        std::cerr << "ERROR: Couldn't send magstripe read sequence (pt 1), rc=" << rc << std::endl;
+        return -1;
+    }
 
     return 0;
 }
