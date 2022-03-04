@@ -5,6 +5,6 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_CXX_FLAGS "-g -O0 -Wall")
 
-add_executable(${PROJECT_NAME} main.cpp)
+add_executable(${PROJECT_NAME}.out main.cpp)
 
-target_link_libraries(${PROJECT_NAME} usb-1.0)
+target_link_libraries(${PROJECT_NAME}.out usb-1.0)

@@ -9,8 +9,8 @@
 */cmake-build-debug/*
 
 # Application binaries
-*/itosayde_msr_880_driver_demo
+*.out
 
 # CLion files
-*/.idea/*
+.idea/**
 *.cbp
