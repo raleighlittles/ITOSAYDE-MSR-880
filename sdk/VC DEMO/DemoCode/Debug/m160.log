@@ -1,0 +1,47 @@
+﻿生成启动时间为 2019/4/15 14:35:06。
+     1>项目“G:\Fujh\SDK\ZCS160\DemoCode\m160.vcxproj”在节点 2 上(build 个目标)。
+     1>InitializeBuildStatus:
+         正在创建“.\Debug\m160.unsuccessfulbuild”，因为已指定“AlwaysCreate”。
+       ClCompile:
+         所有输出均为最新。
+         所有输出均为最新。
+       ResourceCompile:
+         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\rc.exe /D _DEBUG /D _VC80_UPGRADE=0x0600 /l"0x0804" /nologo /fo".\Debug\m160.res" m160.rc 
+       ManifestResourceCompile:
+         所有输出均为最新。
+       Link:
+         g:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:".\Debug\m160.exe" /INCREMENTAL /NOLOGO Lib160.lib /MANIFEST /ManifestFile:".\Debug\m160.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"G:\Fujh\SDK\ZCS160\DemoCode\Debug\m160.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:".\Debug\m160.lib" /MACHINE:X86 .\Debug\m160.res
+         .\Debug\m160.exe.embed.manifest.res
+         .\Debug\DemoFile.obj
+         .\Debug\Dialog1.obj
+         .\Debug\Dialog2.obj
+         .\Debug\Dialog3.obj
+         .\Debug\Dialog4.obj
+         .\Debug\Dialog5.obj
+         .\Debug\Dialog6.obj
+         .\Debug\dialogDesfire.obj
+         .\Debug\DialogEmv.obj
+         .\Debug\DialogEmvCapk.obj
+         .\Debug\DialogEmvPara.obj
+         .\Debug\DialogPinPad.obj
+         .\Debug\edit2_click.obj
+         .\Debug\m160.obj
+         .\Debug\m160Dlg.obj
+         .\Debug\ReadInfo.obj
+         .\Debug\StdAfx.obj
+       Manifest:
+         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /out:".\Debug\m160.exe.embed.manifest" /manifest .\Debug\m160.exe.intermediate.manifest "g:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\Include\Manifest\dpiaware.manifest"
+         所有输出均为最新。
+       LinkEmbedManifest:
+         所有输出均为最新。
+         m160.vcxproj -> G:\Fujh\SDK\ZCS160\DemoCode\.\Debug\m160.exe
+       BscMake:
+         所有输出均为最新。
+       FinalizeBuildStatus:
+         正在删除文件“.\Debug\m160.unsuccessfulbuild”。
+         正在对“.\Debug\m160.lastbuildstate”执行 Touch 任务。
+     1>已完成生成项目“G:\Fujh\SDK\ZCS160\DemoCode\m160.vcxproj”(build 个目标)的操作。
+
+生成成功。
+
+已用时间 00:00:01.21
